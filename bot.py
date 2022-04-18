@@ -17,7 +17,6 @@ GUILD_NAME = os.getenv('GUILD_NAME')
 WHITELIST_ROLE_NAME = 'whitelistedd'
 WHITELIST_CHANNEL_NAME = 'whitelistmembers'
 
-
 client = discord.Client(intents=intents)
 whitelist_channel = None  # Instance of the whitelist channel
 
@@ -32,8 +31,7 @@ async def on_ready():
     print(f'{client.user} has connected to Discord!')
     guild = discord.utils.find(lambda g: g.name == GUILD_NAME, client.guilds)
     whitelist_channel = discord.utils.find(lambda c: c.name == WHITELIST_CHANNEL_NAME, guild.channels)
-    # print_all_member(guild)
-
+    
 
 @client.event
 async def on_member_update(before, after):

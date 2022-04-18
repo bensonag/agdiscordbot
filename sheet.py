@@ -23,18 +23,6 @@ SAMPLE_RANGE_NAME = 'Sheet1!A1:E'
 
 
 def main():
-#    creds = None
-#    if os.path.exists('token.json'):
-#        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-#    if not creds or not creds.valid:
-#        if creds and creds.expired and creds.regresh_token:
-#            creds.refresh(Request())
-#        else: 
-#            
-#            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-#            creds = flow.run_local_server(port=0)
-#        with open('token.json', 'w') as token:
-#            token.write(creds.to_json())
     creds = service_account.Credentials.from_service_account_file('google_credentials.json', scopes=SCOPES)
 
     try:

@@ -22,28 +22,32 @@ SAMPLE_SPREADSHEET_ID = '17pno9beqULzAC3QXDHC8yLwOD7HS9QM6qhh2UX_muZw'
 SAMPLE_RANGE_NAME = 'Sheet1!A1:E'
 
 
-def main():
-    creds = service_account.Credentials.from_service_account_file('google_credentials.json', scopes=SCOPES)
-
-    try:
+class Sheet():
+    def __init__(self):
+        creds = service_account.Credentials.from_service_account_file('google_creds.json', scopes=SCOPES)
         service = build('sheets', 'v4', credentials=creds)
-        sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID, 
-                                    range=SAMPLE_RANGE_NAME).execute()
-        values = result.get('values', [])
+        self.sheet = service.spreadsheets()
 
-        if not values:
-            print('No data found.')
-            return
+    def read_simple(self):
+        try:
+            result = self.sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID, 
+                                        range=SAMPLE_RANGE_NAME).execute()
+            values = result.get('values', [])
+    
+            if not values:
+                print('No data found.')
+                return
 
-        print('content:')
-        for row in values:
-            print(row)
-    except HttpError as err:
-        print(err)
+            print('content:')
+            for row in values:
+                print(row)
+        except HttpError as err:
+            print(err)
+
 
 if __name__ == '__main__':
-    main()
+    sheet = Sheet()
+    sheet.read_simple()
 
 
 

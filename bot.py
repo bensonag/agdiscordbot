@@ -3,6 +3,7 @@ from dis import disco
 from multiprocessing.dummy import current_process
 import os
 from typing import Sequence
+import sheet
 
 import discord
 from dotenv import load_dotenv
@@ -19,20 +20,27 @@ WHITELIST_ROLE_NAME = 'whitelistedd'
 WHITELIST_CHANNEL_NAME = 'whitelistmembers'
 
 client = discord.Client(intents=intents)
+sheet = sheet.Sheet()
+guild: discord.Guild = None # Instace of the guild we care about
 whitelist_channel: discord.TextChannel = None  # Instance of the whitelist channel
+
 
 def print_all_member(guild: discord.Guild):
     for member in guild.members:
         print(f'id: {member.id}, name: {member.name}, roles: {member.roles}')
 
+def update_wl_list():
+    wl_members = list(filter(lambda m: has_whitelist_role(m.roles), guild.members))
+    sheet.update_wl_list(wl_members)
+
 
 @client.event
 async def on_ready():
     print(f'{client.user} has connected to Discord!')
+    global guild, whitelist_channel
     guild = discord.utils.find(lambda g: g.name == GUILD_NAME, client.guilds)
-    global whitelist_channel
     whitelist_channel = discord.utils.find(lambda c: c.name == WHITELIST_CHANNEL_NAME, guild.channels)
-    print_all_member(guild)
+    update_wl_list()
     
 
 @client.event

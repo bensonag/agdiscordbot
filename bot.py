@@ -2,6 +2,7 @@
 from dis import disco
 from multiprocessing.dummy import current_process
 import os
+from typing import Sequence
 
 import discord
 from dotenv import load_dotenv
@@ -18,23 +19,24 @@ WHITELIST_ROLE_NAME = 'whitelistedd'
 WHITELIST_CHANNEL_NAME = 'whitelistmembers'
 
 client = discord.Client(intents=intents)
-whitelist_channel = None  # Instance of the whitelist channel
+whitelist_channel: discord.TextChannel = None  # Instance of the whitelist channel
 
-# def print_all_member(guild):
-#     members = '\n - '.join([member.name for member in guild.members])
-#     print(f'Guild Members:\n - {members}')
+def print_all_member(guild: discord.Guild):
+    for member in guild.members:
+        print(f'id: {member.id}, name: {member.name}, roles: {member.roles}')
 
 
 @client.event
 async def on_ready():
-    global whitelist_channel
     print(f'{client.user} has connected to Discord!')
     guild = discord.utils.find(lambda g: g.name == GUILD_NAME, client.guilds)
+    global whitelist_channel
     whitelist_channel = discord.utils.find(lambda c: c.name == WHITELIST_CHANNEL_NAME, guild.channels)
+    print_all_member(guild)
     
 
 @client.event
-async def on_member_update(before, after):
+async def on_member_update(before: discord.Member, after: discord.Member):
     print('on_member_udate')
     print(f'name: {before.name}')
     print(f'old: {before}, new: {after}')
@@ -42,7 +44,7 @@ async def on_member_update(before, after):
         await whitelist_channel.send(f'welcome to the channel, {before.name}! Now leave your address')
 
 
-def is_adding_whitelist_role_event(before, after):
+def is_adding_whitelist_role_event(before: discord.Member, after: discord.Member):
     print('is_add_whitelist_role_event')
     roles = set(after.roles) - set(before.roles)
     print(roles)
@@ -50,7 +52,7 @@ def is_adding_whitelist_role_event(before, after):
 
 
 @client.event
-async def on_message(message):
+async def on_message(message: discord.Message):
     print('on_message')
     if message.author == client.user:
         return
@@ -61,7 +63,7 @@ async def on_message(message):
         await try_collect_address(message)
 
 
-async def try_collect_address(message):
+async def try_collect_address(message: discord.Message):
     if not has_whitelist_role(message.author.roles):
         return
     if not is_giving_valid_address(message.content):
@@ -73,15 +75,15 @@ async def try_collect_address(message):
         await message.delete()
 
 
-def is_giving_valid_address(msg):
+def is_giving_valid_address(msg: str):
     return len(msg.split()) == 1
 
-def write_to_sheet(user, address):
+def write_to_sheet(user: discord.Member, address: str):
     print(f'id: {user.id}, name: {user.name}, address: {address}')
     return True
     # TODO: implement this
 
-def has_whitelist_role(roles):
+def has_whitelist_role(roles: Sequence[discord.Role]):
     for role in roles:
         if role.name == WHITELIST_ROLE_NAME:
             print('has_whitelist_role: True')

@@ -95,16 +95,14 @@ class Sheet():
         return sorted(rows, key=lambda row: row[0])
 
     def write(self, values):
-        print(values)
         values.append([''] * 4)
         values.append([''] * 4) # add some blank rows to override existing rows
-        print(values)
         body = {'values': values}
         result = self.sheet.values().update(
             spreadsheetId=SAMPLE_SPREADSHEET_ID, range=RANGE_NAME,
             valueInputOption='RAW', body=body
         ).execute()
-        print(result)
+        print(f'Write completed: {result}')
 
     def _current_time(self):
         return datetime.now(pytz.timezone('US/Eastern')).strftime("%Y:%m:%d %H:%M:%S")

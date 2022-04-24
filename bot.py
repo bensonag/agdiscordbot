@@ -29,7 +29,8 @@ def print_all_member(guild: discord.Guild):
     for member in guild.members:
         print(f'id: {member.id}, name: {member.name}, roles: {member.roles}')
 
-def update_wl_list():
+def update_wl_list_to_sheet():
+    print('OnReady: updating all WLed users to the sheet.')
     wl_members = list(filter(lambda m: has_whitelist_role(m.roles), guild.members))
     sheet.update_wl_list(wl_members)
 
@@ -40,7 +41,7 @@ async def on_ready():
     global guild, whitelist_channel
     guild = discord.utils.find(lambda g: g.name == GUILD_NAME, client.guilds)
     whitelist_channel = discord.utils.find(lambda c: c.name == WHITELIST_CHANNEL_NAME, guild.channels)
-    update_wl_list()
+    update_wl_list_to_sheet()
     
 
 @client.event

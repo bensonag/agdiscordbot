@@ -92,7 +92,7 @@ async def on_message(message: discord.Message):
         except Exception as e:
             logger.error(traceback.format_exc())
         await whitelist_channel.send(
-            ' Thanks <@{message.author.id}>! Your address ending with '
+            f' Thanks <@{message.author.id}>! Your address ending with '
             f'\'{message.content[-3:]}\' has been recorded. If you want to'
             ' update address, simply type the address again!')
         await message.delete()

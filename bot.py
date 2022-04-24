@@ -4,6 +4,8 @@ from multiprocessing.dummy import current_process
 import os
 from typing import Sequence
 import sheet
+import log
+import traceback
 
 import discord
 from dotenv import load_dotenv
@@ -20,36 +22,43 @@ WHITELIST_ROLE_NAME = 'whitelistedd'
 WHITELIST_CHANNEL_NAME = 'whitelistmembers'
 
 client = discord.Client(intents=intents)
-sheet = sheet.Sheet()
+logger = log.Logger()
+sheet = sheet.Sheet(logger)
 guild: discord.Guild = None # Instace of the guild we care about
 whitelist_channel: discord.TextChannel = None  # Instance of the whitelist channel
 
 
 def update_wl_list_to_sheet():
     wl_members = list(filter(lambda m: has_whitelist_role(m), guild.members))
-    sheet.update_wl_list(wl_members)
+    try:
+        sheet.update_wl_list(wl_members)
+    except Exception as e:
+        logger.error(traceback.format_exc())
 
 
 @client.event
 async def on_ready():
-    print(f'{client.user} has connected to Discord!')
+    logger.info(f'{client.user} has connected to Discord!')
     global guild, whitelist_channel
     guild = discord.utils.find(lambda g: g.name == GUILD_NAME, client.guilds)
     whitelist_channel = discord.utils.find(lambda c: c.name == WHITELIST_CHANNEL_NAME, guild.channels)
     update_wl_list_to_sheet()
-    
+
 
 @client.event
 async def on_member_update(before: discord.Member, after: discord.Member):
-    print('on_member_udate')
-    print(f'name: {before.name}')
-    print(f'old: {before}, new: {after}')
     if is_adding_whitelist_role_event(before, after):
-        sheet.add_one_entry(after)
+        try:
+            sheet.add_one_entry(after)
+        except Exception as e:
+            logger.error(traceback.format_exc())
         await whitelist_channel.send(f'welcome to the channel, <@{before.id}>! Now leave your address')
         return
     if is_removing_whitelist_role_event(before, after):
-        sheet.remove_one_entry(after)
+        try:
+            sheet.remove_one_entry(after)
+        except Exception as e:
+            logger.error(traceback.format_exc())
         return
 
 
@@ -78,7 +87,10 @@ async def on_message(message: discord.Message):
     if not has_whitelist_role(message.author):
         return
     if is_valid_address(message.content):
-        sheet.record_address(message.author, message.content)
+        try:
+            sheet.record_address(message.author, message.content)
+        except Exception as e:
+            logger.error(traceback.format_exc())
         await whitelist_channel.send(
             f' Thanks <@{message.author.id}>! Your address ending with '
             '\'{message.content[-3:]}\' has been recorded. If you want to'

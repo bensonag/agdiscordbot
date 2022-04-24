@@ -5,8 +5,8 @@ import os.path
 from typing import Sequence
 import pytz
 from datetime import datetime
-from dotenv import load_dotenv
 import discord
+import log
 
 from typing import Union
 from google.auth.transport.requests import Request
@@ -17,9 +17,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 
-load_dotenv()
-API_KEY = os.getenv('GOOGLE_API_KEY')
-
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # https://docs.google.com/spreadsheets/d/17pno9beqULzAC3QXDHC8yLwOD7HS9QM6qhh2UX_muZw/edit#gid=0 
@@ -28,7 +25,8 @@ RANGE_NAME = 'Sheet1!A2:F'
 
 
 class Sheet():
-    def __init__(self):
+    def __init__(self, logger: log.Logger):
+        self._logger = logger
         creds = service_account.Credentials.from_service_account_file('google_creds.json', scopes=SCOPES)
         service = build('sheets', 'v4', credentials=creds)
         self.sheet = service.spreadsheets()
@@ -52,10 +50,10 @@ class Sheet():
         new_wl_ids = set(row[0] for row in new)
         for i in range(len(old) - 1, -1, -1): # Remove in reserve order
             if old[i][0] not in new_wl_ids:
-                print(f'Removed user({old[i]}) since they no longer has whitelist role')
+                self._logger.info(f'Removed user({old[i]}) since they no longer has whitelist role')
                 old.pop(i)
             elif i != 0 and old[i][0] == old[i-1][0]:
-                print(f'Removed row ({old[i]}) due to duplication')
+                self._logger.warning(f'Removed row ({old[i]}) due to duplication')
                 old.pop(i)
         return old
 
@@ -68,10 +66,10 @@ class Sheet():
             if i == len(old) or old[i][0] != new[j][0]: # if no such ID
                 old.insert(i, new[j])
                 self._update_timestamp(old, i)
-                print(f'Add new User({new[j]})')
+                self._logger.info(f'Add new User({new[j]})')
             else:
                 if old[i][1] != new[j][1]:  # If name is different, update name
-                    print(f'Update User({old[i][0]})\'s name from {old[i][1]} to {new[j][1]}')
+                    self._logger.warning(f'Update User({old[i][0]})\'s name from {old[i][1]} to {new[j][1]}')
                     self._update_timestamp(old, i)
                     old[i][1] = new[j][1]
             i = i + 1
@@ -80,11 +78,11 @@ class Sheet():
     def add_one_entry(self, member: discord.Member):
         old = self._all_sheeted_users()
         if self._find_same_id(old, member.id) != None:
-            print(f'User ({member.id}. {member.name}) already exists!')
+            self._logger.warning(f'User ({member.id}. {member.name}) already exists!')
             return
 
         member = self._member_to_row(member)
-        print(f'Add new User({member})')
+        self._logger.info(f'Add new User({member})')
         old.append(member)
         self._update_timestamp(old, len(old) - 1)
         updated = self._sort_by_id(old)
@@ -93,10 +91,11 @@ class Sheet():
     def remove_one_entry(self, member: discord.Member):
         sheeted_members = self._all_sheeted_users()
         index = self._find_same_id(sheeted_members, member.id)
-        if index == None:
-            print(f'No User ({member.id}. {member.name}) exists! Deletion aborted')
+        if index is None:
+            self._logger.warning(f'No User ({member.id}. {member.name}) exists! Deletion aborted')
+            return
         deleted_row = sheeted_members.pop(index)
-        print(f'Removed User ({deleted_row})')
+        self._logger.info(f'Removed User ({deleted_row})')
         self._write(sheeted_members)
     
     def record_address(self, member: discord.Member, addr: str):
@@ -106,7 +105,7 @@ class Sheet():
             sheeted_members.append(self._member_to_row(member))
             index = len(sheeted_members) - 1
         sheeted_members[index][2] = addr
-        print(f'Updated User ({sheeted_members[index]})')
+        self._logger.info(f'Updated User ({sheeted_members[index]})')
         self._update_timestamp(sheeted_members, index)
         updated = self._sort_by_id(sheeted_members)
         self._write(updated)
@@ -128,7 +127,7 @@ class Sheet():
             result = self.sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID, 
                                         range=RANGE_NAME).execute()
         except HttpError as err:
-            print(err)
+            self._logger.error(err)
         
         values = result.get('values', [])
         sorted_values = self._sort_by_id(values)
@@ -145,29 +144,17 @@ class Sheet():
             spreadsheetId=SAMPLE_SPREADSHEET_ID, range=RANGE_NAME,
             valueInputOption='RAW', body=body
         ).execute()
-        print(f'Write completed: {result}')
+        self._logger.info(f'Write completed: {result}')
 
     def _current_time(self):
         return datetime.now(pytz.timezone('US/Eastern')).strftime("%Y:%m:%d %H:%M:%S")
 
 
-if __name__ == '__main__':
-    sheet = Sheet()
+# if __name__ == '__main__':
+    # sheet = Sheet()
     # sheet.read_simple()
     # sheet.write()
     # sheet.current_time()
 
-
-"""
-Scenario: start (done)
-- Read all entries from the sheet
-- List all users with WL role, add new users to the sheet
-
-Scenario: When a user is given WL role
-- Read all entries from the sheet, and add the user to the ordered list
-
-Scenario: When the user provide address in that channel
-- update it to the sheet
-"""
 
 # TODO: log to google cloud stakedrive

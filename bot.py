@@ -25,13 +25,8 @@ guild: discord.Guild = None # Instace of the guild we care about
 whitelist_channel: discord.TextChannel = None  # Instance of the whitelist channel
 
 
-def print_all_member(guild: discord.Guild):
-    for member in guild.members:
-        print(f'id: {member.id}, name: {member.name}, roles: {member.roles}')
-
 def update_wl_list_to_sheet():
-    print('OnReady: updating all WLed users to the sheet.')
-    wl_members = list(filter(lambda m: has_whitelist_role(m.roles), guild.members))
+    wl_members = list(filter(lambda m: has_whitelist_role(m), guild.members))
     sheet.update_wl_list(wl_members)
 
 
@@ -51,7 +46,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
     print(f'old: {before}, new: {after}')
     if is_adding_whitelist_role_event(before, after):
         sheet.add_one_entry(after)
-        await whitelist_channel.send(f'welcome to the channel, {before.name}! Now leave your address')
+        await whitelist_channel.send(f'welcome to the channel, <@{before.id}>! Now leave your address')
         return
     if is_removing_whitelist_role_event(before, after):
         sheet.remove_one_entry(after)
@@ -74,52 +69,36 @@ def is_removing_whitelist_role_event(before: discord.Member, after: discord.Memb
 
 @client.event
 async def on_message(message: discord.Message):
-    print('on_message')
     if message.author == client.user:
         return
     if message.content.lower() == 'ping!':
         await message.channel.send('pong!')
-    if message.channel is whitelist_channel:
-        print('msg from whitelist_channel')
-        await try_collect_address(message)
-
-
-async def try_collect_address(message: discord.Message):
-    if not has_whitelist_role(message.author.roles):
+    if message.channel is not whitelist_channel:
         return
-    if not is_giving_valid_address(message.content):
+    if not has_whitelist_role(message.author):
         return
-
-    result = write_to_sheet(message.author, message.content)
-    if result:
-        await whitelist_channel.send(f' Thanks {message.author.name}! Your address is recorded.')
+    if is_valid_address(message.content):
+        sheet.record_address(message.author, message.content)
+        await whitelist_channel.send(
+            f' Thanks <@{message.author.id}>! Your address ending with '
+            '\'{message.content[-3:]}\' has been recorded. If you want to'
+            ' update address, simply type the address again!')
         await message.delete()
 
 
-def is_giving_valid_address(msg: str):
-    return len(msg.split()) == 1
+def is_valid_address(msg: str):
+    if len(msg.split()) != 1:
+        return False
+    if len(msg) != 42:
+        return False
+    return msg[:2] == '0x'
 
-def write_to_sheet(user: discord.Member, address: str):
-    print(f'id: {user.id}, name: {user.name}, address: {address}')
-    return True
-    # TODO: implement this
 
-def has_whitelist_role(roles: Sequence[discord.Role]):
-    for role in roles:
+def has_whitelist_role(member: discord.Member):
+    for role in member.roles:
         if role.name == WHITELIST_ROLE_NAME:
-            print('has_whitelist_role: True')
             return True
-    print('has_whitelist_role: False')
     return False
 
+
 client.run(TOKEN)
-
-# TODO: Trigger when admin say 'something'
-# TODO: List all members with role 'whitelisted'
-# TODO: Write all new whitelisted members to google sheet
-# TODO: Read google sheet to understand the list of members without address
-# TODO: DM them to collect address
-# TODO: Read address from message and write to google sheet
-# TODO: Send thank you msg when collecting address
-
-# TODO: Trigger DM when user is added for the role

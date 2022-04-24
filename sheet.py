@@ -79,7 +79,7 @@ class Sheet():
     
     def add_one_entry(self, member: discord.Member):
         old = self._all_sheeted_users()
-        if self._find_same_id(old, str(member.id)) != None:
+        if self._find_same_id(old, member.id) != None:
             print(f'User ({member.id}. {member.name}) already exists!')
             return
 
@@ -92,14 +92,27 @@ class Sheet():
     
     def remove_one_entry(self, member: discord.Member):
         sheeted_members = self._all_sheeted_users()
-        index = self._find_same_id(sheeted_members, str(member.id))
+        index = self._find_same_id(sheeted_members, member.id)
         if index == None:
             print(f'No User ({member.id}. {member.name}) exists! Deletion aborted')
         deleted_row = sheeted_members.pop(index)
         print(f'Removed User ({deleted_row})')
         self._write(sheeted_members)
+    
+    def record_address(self, member: discord.Member, addr: str):
+        sheeted_members = self._all_sheeted_users()
+        index = self._find_same_id(sheeted_members, member.id)
+        if index is None:
+            sheeted_members.append(self._member_to_row(member))
+            index = len(sheeted_members) - 1
+        sheeted_members[index][2] = addr
+        print(f'Updated User ({sheeted_members[index]})')
+        self._update_timestamp(sheeted_members, index)
+        updated = self._sort_by_id(sheeted_members)
+        self._write(updated)
 
-    def _find_same_id(self, rows: Sequence[Sequence], target_id: str) -> Union[None, int]:
+    def _find_same_id(self, rows: Sequence[Sequence], target_id: Union[int, str]) -> Union[None, int]:
+        target_id = str(target_id)
         for i in range(len(rows)):
             if rows[i][0] == target_id:
                 return i

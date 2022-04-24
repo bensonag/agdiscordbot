@@ -97,6 +97,7 @@ class Sheet():
     def write(self, values):
         print(values)
         values.append([''] * 4)
+        values.append([''] * 4) # add some blank rows to override existing rows
         print(values)
         body = {'values': values}
         result = self.sheet.values().update(
@@ -117,7 +118,7 @@ if __name__ == '__main__':
 
 
 """
-Scenario: start
+Scenario: start (done)
 - Read all entries from the sheet
 - List all users with WL role, add new users to the sheet
 
@@ -127,3 +128,5 @@ Scenario: When a user is given WL role
 Scenario: When the user provide address in that channel
 - update it to the sheet
 """
+
+# TODO: log to google cloud stakedrive

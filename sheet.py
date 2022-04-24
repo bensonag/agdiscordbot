@@ -150,11 +150,3 @@ class Sheet():
         return datetime.now(pytz.timezone('US/Eastern')).strftime("%Y:%m:%d %H:%M:%S")
 
 
-# if __name__ == '__main__':
-    # sheet = Sheet()
-    # sheet.read_simple()
-    # sheet.write()
-    # sheet.current_time()
-
-
-# TODO: log to google cloud stakedrive

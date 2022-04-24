@@ -50,14 +50,26 @@ async def on_member_update(before: discord.Member, after: discord.Member):
     print(f'name: {before.name}')
     print(f'old: {before}, new: {after}')
     if is_adding_whitelist_role_event(before, after):
+        sheet.add_one_entry(after)
         await whitelist_channel.send(f'welcome to the channel, {before.name}! Now leave your address')
+        return
+    if is_removing_whitelist_role_event(before, after):
+        sheet.remove_one_entry(after)
+        return
 
 
-def is_adding_whitelist_role_event(before: discord.Member, after: discord.Member):
-    print('is_add_whitelist_role_event')
-    roles = set(after.roles) - set(before.roles)
-    print(roles)
-    return len(roles) == 1 and roles.pop().name == WHITELIST_ROLE_NAME
+def is_adding_whitelist_role_event(before: discord.Member, after: discord.Member) -> bool:
+    if len(after.roles) - len(before.roles) != 1:
+        return False
+    role_difference = set(after.roles) - set(before.roles)
+    return role_difference.pop().name == WHITELIST_ROLE_NAME
+
+
+def is_removing_whitelist_role_event(before: discord.Member, after: discord.Member):
+    if len(before.roles) - len(after.roles) != 1:
+        return False
+    role_difference = set(before.roles) - set(after.roles)
+    return role_difference.pop().name == WHITELIST_ROLE_NAME
 
 
 @client.event

@@ -8,6 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 import discord
 
+from typing import Union
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
@@ -32,20 +33,20 @@ class Sheet():
         service = build('sheets', 'v4', credentials=creds)
         self.sheet = service.spreadsheets()
 
-    def update_wl_list(self, users: Sequence[discord.Member]):
+    def update_wl_list(self, members: Sequence[discord.Member]):
         """Write all WLed users to the sheet.
 
         For un-recorded user, [user.id, user.name, , timestamp] will be reocrded.
         If any existing user is not shown in the passed users list, it will be removed.
         """
-        new = [[str(user.id), user.name] for user in users]
+        new = [self._member_to_row(member) for member in members]
         new = self._sort_by_id(new)
 
         old = self._all_sheeted_users()
         updated_rows = self._remove_invalid_entries(old, new)
         updated_rows = self._add_new_entries(updated_rows, new)
 
-        self.write(updated_rows)
+        self._write(updated_rows)
 
     def _remove_invalid_entries(self, old, new):
         new_wl_ids = set(row[0] for row in new)
@@ -58,29 +59,58 @@ class Sheet():
                 old.pop(i)
         return old
 
-    def _add_new_entries(self, old, new):
-        current_time = self._current_time()
+    def _member_to_row(self, member: discord.Member) -> Sequence:
+        return [str(member.id), member.name, '', '']
+
+    def _add_new_entries(self, old: Sequence[Sequence], new: Sequence[Sequence]):
         i = 0  # index for old
         for j in range(len(new)):
             if i == len(old) or old[i][0] != new[j][0]: # if no such ID
                 old.insert(i, new[j])
-                self._update_timestamp(current_time, old, i)
+                self._update_timestamp(old, i)
                 print(f'Add new User({new[j]})')
             else:
                 if old[i][1] != new[j][1]:  # If name is different, update name
-                    print(f'Update User({old[i][0]})\'s Name from {old[i][1]} to {new[j][1]}')
-                    self._update_timestamp(current_time, old, i)
+                    print(f'Update User({old[i][0]})\'s name from {old[i][1]} to {new[j][1]}')
+                    self._update_timestamp(old, i)
                     old[i][1] = new[j][1]
             i = i + 1
         return old
+    
+    def add_one_entry(self, member: discord.Member):
+        old = self._all_sheeted_users()
+        if self._find_same_id(old, str(member.id)) != None:
+            print(f'User ({member.id}. {member.name}) already exists!')
+            return
+
+        member = self._member_to_row(member)
+        print(f'Add new User({member})')
+        old.append(member)
+        self._update_timestamp(old, len(old) - 1)
+        updated = self._sort_by_id(old)
+        self._write(updated)
+    
+    def remove_one_entry(self, member: discord.Member):
+        sheeted_members = self._all_sheeted_users()
+        index = self._find_same_id(sheeted_members, str(member.id))
+        if index == None:
+            print(f'No User ({member.id}. {member.name}) exists! Deletion aborted')
+        deleted_row = sheeted_members.pop(index)
+        print(f'Removed User ({deleted_row})')
+        self._write(sheeted_members)
+
+    def _find_same_id(self, rows: Sequence[Sequence], target_id: str) -> Union[None, int]:
+        for i in range(len(rows)):
+            if rows[i][0] == target_id:
+                return i
+        return None
             
-    def _update_timestamp(self, current_time, rows, index):
+    def _update_timestamp(self, rows, index):
         while len(rows[index]) < 4:
             rows[index].append('')
-        rows[index][3] = current_time
+        rows[index][3] = self._current_time()
 
-
-    def _all_sheeted_users(self) -> Sequence:
+    def _all_sheeted_users(self) -> Sequence[Sequence]:
         try:
             result = self.sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID, 
                                         range=RANGE_NAME).execute()
@@ -94,7 +124,7 @@ class Sheet():
     def _sort_by_id(self, rows):
         return sorted(rows, key=lambda row: row[0])
 
-    def write(self, values):
+    def _write(self, values):
         values.append([''] * 4)
         values.append([''] * 4) # add some blank rows to override existing rows
         body = {'values': values}

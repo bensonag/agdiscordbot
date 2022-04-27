@@ -18,7 +18,7 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD_NAME = os.getenv('GUILD_NAME')
 
-WHITELIST_ROLE_NAME = 'whitelistedd'
+WHITELIST_ROLE_NAME = set(['OG Galactic', 'Planet WL'])
 WHITELIST_CHANNEL_NAME = 'whitelistmembers'
 
 client = discord.Client(intents=intents)
@@ -63,17 +63,11 @@ async def on_member_update(before: discord.Member, after: discord.Member):
 
 
 def is_adding_whitelist_role_event(before: discord.Member, after: discord.Member) -> bool:
-    if len(after.roles) - len(before.roles) != 1:
-        return False
-    role_difference = set(after.roles) - set(before.roles)
-    return role_difference.pop().name == WHITELIST_ROLE_NAME
+    return not has_whitelist_role(before) and has_whitelist_role(after)
 
 
 def is_removing_whitelist_role_event(before: discord.Member, after: discord.Member):
-    if len(before.roles) - len(after.roles) != 1:
-        return False
-    role_difference = set(before.roles) - set(after.roles)
-    return role_difference.pop().name == WHITELIST_ROLE_NAME
+    return has_whitelist_role(before) and not has_whitelist_role(after)
 
 
 @client.event
@@ -107,8 +101,9 @@ def is_valid_address(msg: str):
 
 
 def has_whitelist_role(member: discord.Member):
+    print(member.roles)
     for role in member.roles:
-        if role.name == WHITELIST_ROLE_NAME:
+        if role.name in WHITELIST_ROLE_NAME:
             return True
     return False
 

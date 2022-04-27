@@ -52,7 +52,9 @@ async def on_member_update(before: discord.Member, after: discord.Member):
             sheet.add_one_entry(after)
         except Exception as e:
             logger.error(traceback.format_exc())
-        await whitelist_channel.send(f'welcome to the channel, <@{before.id}>! Now leave your address')
+        await whitelist_channel.send(
+                f'Welcome Captain <@{before.id}>, we\'re excited to have you on'
+                ' our whitelist! You may now enter your wallet address...')
         return
     if is_removing_whitelist_role_event(before, after):
         try:
@@ -86,9 +88,14 @@ async def on_message(message: discord.Message):
         except Exception as e:
             logger.error(traceback.format_exc())
         await whitelist_channel.send(
-            f' Thanks <@{message.author.id}>! Your address ending with '
-            f'\'{message.content[-3:]}\' has been recorded. If you want to'
-            ' update address, simply type the address again!')
+                f'Congratulations <@{message.author.id}>, your address ending '
+                f'with \'{message.content[-3:]}\' has been recorded into the '
+                'Arcade Galaxy database. Our mint is live on May 20th 11AM UTC, '
+                'and you can find live information on our website here '
+                '(http://arcadegalaxy.space/) Please stay up-to-date with our '
+                'Twitter (http://twitter.com/arcadegalaxy_) and interact with '
+                'us for giveaway opportunities! If you would like to update '
+                'the address, simply type it in again!')
         await message.delete()
 
 
@@ -101,7 +108,6 @@ def is_valid_address(msg: str):
 
 
 def has_whitelist_role(member: discord.Member):
-    print(member.roles)
     for role in member.roles:
         if role.name in WHITELIST_ROLE_NAME:
             return True

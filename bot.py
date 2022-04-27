@@ -108,10 +108,7 @@ def is_valid_address(msg: str):
 
 
 def has_whitelist_role(member: discord.Member):
-    for role in member.roles:
-        if role.name in WHITELIST_ROLE_NAME:
-            return True
-    return False
+    return any((role.name in WHITELIST_ROLE_NAME for role in member.roles))
 
 
 client.run(TOKEN)

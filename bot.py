@@ -104,7 +104,7 @@ def is_valid_address(msg: str):
         return False
     if len(msg) != 42:
         return False
-    return msg[:2] == '0x'
+    return msg[:2].lower() == '0x'
 
 
 def has_whitelist_role(member: discord.Member):

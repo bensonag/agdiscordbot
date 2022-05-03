@@ -18,7 +18,7 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD_NAME = os.getenv('GUILD_NAME')
 
-WHITELIST_ROLE_NAME = set(['OG Galactic', 'Planet WL'])
+WHITELIST_ROLE_NAME = set(['OG Galactic', 'Planet WL', 'Galactic 2.0'])
 WHITELIST_CHANNEL_NAME = 'whitelistmembers'
 
 client = discord.Client(intents=intents)

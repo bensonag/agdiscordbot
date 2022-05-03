@@ -19,7 +19,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD_NAME = os.getenv('GUILD_NAME')
 
 WHITELIST_ROLE_NAME = set(['OG Galactic', 'Planet WL', 'Galactic 2.0'])
-WHITELIST_CHANNEL_NAME = 'whitelistmembers'
+WHITELIST_CHANNEL_NAME = 'submit-address'
 
 client = discord.Client(intents=intents)
 logger = log.Logger()

@@ -110,6 +110,13 @@ class Sheet():
         updated = self._sort_by_id(sheeted_members)
         self._write(updated)
 
+    def get_address(self, member: discord.Member) -> Union[None, str]:
+        sheeted_members = self._all_sheeted_users()
+        index = self._find_same_id(sheeted_members, member.id)
+        if index is None:
+            return ''
+        return sheeted_members[index][2]
+
     def _find_same_id(self, rows: Sequence[Sequence], target_id: Union[int, str]) -> Union[None, int]:
         target_id = str(target_id)
         for i in range(len(rows)):

@@ -97,6 +97,23 @@ async def on_message(message: discord.Message):
                 'us for giveaway opportunities! If you would like to update '
                 'the address, simply type it in again!')
         await message.delete()
+    if is_checking_address(message.content):
+        addr = ''
+        try:
+            addr = sheet.get_address(message.author)
+        except Exception as e:
+            logger.error(traceback.format_exc())
+        if addr == '':
+            await whitelist_channel.send(
+                    f'<@{message.author.id}>, You have not submitted an address '
+                    'yet. Submit your address now to confirm your spot simply by'
+                    ' pasting your AVAX C-Chain address below!')
+        else:
+            await whitelist_channel.send(
+                    f'<@{message.author.id}>, You are ready for our mint on May '
+                    '20th! Your current address on file is the one ending with '
+                    f'\'{addr[-3:]}\'. If you would like to update your address,'
+                    ' simply paste your new AVAX C-Chain address below!.')
 
 
 def is_valid_address(msg: str):
@@ -111,4 +128,9 @@ def has_whitelist_role(member: discord.Member):
     return any((role.name in WHITELIST_ROLE_NAME for role in member.roles))
 
 
+def is_checking_address(msg: str):
+    return msg.lower() == '-address'
+
+
 client.run(TOKEN)
+

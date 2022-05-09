@@ -144,8 +144,8 @@ class Sheet():
         return sorted(rows, key=lambda row: row[0])
 
     def _write(self, values):
-        values.append([''] * 4)
-        values.append([''] * 4) # add some blank rows to override existing rows
+        for i in range(20):
+            values.append([''] * 4) # add some blank rows to override existing rows
         body = {'values': values}
         result = self.sheet.values().update(
             spreadsheetId=SAMPLE_SPREADSHEET_ID, range=RANGE_NAME,
